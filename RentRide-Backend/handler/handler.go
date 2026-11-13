@@ -123,8 +123,8 @@ func validateCar(in store.CarInput) string {
 	if in.Brand == "" || in.Model == "" {
 		return "กรุณากรอกยี่ห้อและรุ่น"
 	}
-	if in.Type != "car" && in.Type != "motorcycle" {
-		return "ประเภทต้องเป็น car หรือ motorcycle"
+	if in.Type == "" {
+		return "กรุณาเลือกประเภทรถ"
 	}
 	if in.PricePerDay <= 0 {
 		return "ราคาต่อวันต้องมากกว่า 0"
