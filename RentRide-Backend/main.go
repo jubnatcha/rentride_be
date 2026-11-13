@@ -59,6 +59,10 @@ func main() {
 	mux.HandleFunc("PUT /api/bookings/{id}/cancel", login(h.CancelBooking))
 	mux.HandleFunc("GET /api/admin/bookings", admin(h.AllBookings))
 	mux.HandleFunc("PUT /api/admin/bookings/{id}", admin(h.UpdateBookingStatus))
+	// จัดการรถ (admin)
+	mux.HandleFunc("POST /api/admin/cars", admin(h.CreateCar))
+	mux.HandleFunc("PUT /api/admin/cars/{id}", admin(h.UpdateCar))
+	mux.HandleFunc("DELETE /api/admin/cars/{id}", admin(h.DeleteCar))
 
 	origins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
 
