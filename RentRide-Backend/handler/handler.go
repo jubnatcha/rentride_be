@@ -119,3 +119,82 @@ func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]string{"message": "อัปเดตสถานะสำเร็จ"})
 }
+func validateCar(in store.CarInput) string {
+	if in.Brand == "" || in.Model == "" {
+		return "กรุณากรอกยี่ห้อและรุ่น"
+	}
+	if in.Type != "car" && in.Type != "motorcycle" {
+		return "ประเภทต้องเป็น car หรือ motorcycle"
+	}
+	if in.PricePerDay <= 0 {
+		return "ราคาต่อวันต้องมากกว่า 0"
+	}
+	return ""
+}
+
+func (h *Handler) CreateCar(w http.ResponseWriter, r *http.Request) {
+	var in store.CarInput
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "รูปแบบข้อมูลไม่ถูกต้อง")
+		return
+	}
+	if msg := validateCar(in); msg != "" {
+		writeError(w, http.StatusBadRequest, "INVALID_CAR", msg)
+		return
+	}
+	car, err := h.Store.CreateCar(r.Context(), in)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, car)
+}
+
+func (h *Handler) UpdateCar(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r, "id")
+	if !ok {
+		writeError(w, http.StatusBadRequest, "BAD_ID", "เลขรถต้องเป็นตัวเลข")
+		return
+	}
+	var in store.CarInput
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "รูปแบบข้อมูลไม่ถูกต้อง")
+		return
+	}
+	if msg := validateCar(in); msg != "" {
+		writeError(w, http.StatusBadRequest, "INVALID_CAR", msg)
+		return
+	}
+	car, err := h.Store.UpdateCar(r.Context(), id, in)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "CAR_NOT_FOUND", "ไม่พบรถคันนี้")
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, car)
+}
+
+func (h *Handler) DeleteCar(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r, "id")
+	if !ok {
+		writeError(w, http.StatusBadRequest, "BAD_ID", "เลขรถต้องเป็นตัวเลข")
+		return
+	}
+	err := h.Store.DeleteCar(r.Context(), id)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "CAR_NOT_FOUND", "ไม่พบรถคันนี้")
+		return
+	}
+	if errors.Is(err, store.ErrCarInUse) {
+		writeError(w, http.StatusConflict, "CAR_IN_USE", "ลบไม่ได้ เพราะรถคันนี้มีประวัติการจอง")
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "ลบรถสำเร็จ"})
+}
