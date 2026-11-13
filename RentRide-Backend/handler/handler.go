@@ -77,14 +77,12 @@ func (h *Handler) GetCar(w http.ResponseWriter, r *http.Request) {
 }
 // UpdateBookingStatus ใช้สำหรับอัปเดตสถานะการจอง
 func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
-	// 1. ดึง ID ของการจองจาก URL
 	id, ok := pathID(r, "id")
 	if !ok {
 		writeError(w, http.StatusBadRequest, "BAD_ID", "เลขการจองต้องเป็นตัวเลข")
 		return
 	}
 
-	// 2. รับค่าสถานะใหม่ที่ส่งมาทาง Request Body (JSON)
 	var req struct {
 		Status string `json:"status"`
 	}
@@ -93,13 +91,31 @@ func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. เรียกใช้ Store เพื่ออัปเดตข้อมูลในฐานข้อมูล
-	err := h.Store.UpdateBookingStatus(r.Context(), id, req.Status)
+	// ---- ส่วนที่เพิ่มเข้ามาเพื่อแก้ปัญหา Constraint ----
+	validStatus := ""
+	switch req.Status {
+	// ถ้า Frontend ส่งคำว่า approved มา ให้เปลี่ยนเป็นคำที่ DB ยอมรับ (เช่น active)
+	case "approved": 
+		validStatus = "active" // <--- ถ้าใน DB คุณให้ใช้คำว่า "confirmed" หรือคำอื่น ให้เปลี่ยนตรงนี้ครับ
+	case "cancelled":
+		validStatus = "cancelled"
+	case "pending":
+		validStatus = "pending"
+	case "active":
+		validStatus = "active"
+	default:
+		// ถ้าส่งมาเป็นคำแปลกๆ ให้ตัดจบการทำงานและแจ้ง Error กลับไปที่ Frontend
+		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "สถานะการจองไม่ถูกต้อง: "+req.Status)
+		return
+	}
+	// ---------------------------------------------
+
+	// สังเกตว่าเราส่งตัวแปร validStatus ไปให้ Store แทน req.Status 
+	err := h.Store.UpdateBookingStatus(r.Context(), id, validStatus)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 
-	// 4. ส่งผลลัพธ์กลับไปว่าอัปเดตสำเร็จ
 	writeJSON(w, http.StatusOK, map[string]string{"message": "อัปเดตสถานะสำเร็จ"})
 }

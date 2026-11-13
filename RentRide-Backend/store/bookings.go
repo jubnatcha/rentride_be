@@ -159,3 +159,11 @@ func (s *Store) CancelBooking(ctx context.Context, id, userID int64) error {
 	}
 	return nil
 }
+// เพิ่มลงในแพ็กเกจ store
+func (s *Store) UpdateBookingStatus(ctx context.Context, id int64, status string) error {
+	// คำสั่ง SQL สำหรับอัปเดตสถานะ
+	query := `UPDATE bookings SET status = $1 WHERE id = $2`
+	
+	_, err := s.Pool.Exec(ctx, query, status, id)
+	return err
+}
