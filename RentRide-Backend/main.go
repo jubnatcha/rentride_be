@@ -47,6 +47,8 @@ func main() {
 	mux.HandleFunc("GET /api/me", login(h.Me))
 	mux.HandleFunc("GET /api/cars", h.ListCars)
 	mux.HandleFunc("GET /api/cars/{id}", h.GetCar)
+	mux.HandleFunc("POST /api/login", h.Login)
+	mux.HandleFunc("POST /api/register", h.Register)
 
 	// การจอง
 	mux.HandleFunc("POST /api/bookings", login(h.CreateBooking))
