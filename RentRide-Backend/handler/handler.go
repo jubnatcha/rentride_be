@@ -75,3 +75,31 @@ func (h *Handler) GetCar(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, c)
 }
+// UpdateBookingStatus ใช้สำหรับอัปเดตสถานะการจอง
+func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
+	// 1. ดึง ID ของการจองจาก URL
+	id, ok := pathID(r, "id")
+	if !ok {
+		writeError(w, http.StatusBadRequest, "BAD_ID", "เลขการจองต้องเป็นตัวเลข")
+		return
+	}
+
+	// 2. รับค่าสถานะใหม่ที่ส่งมาทาง Request Body (JSON)
+	var req struct {
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "รูปแบบข้อมูลไม่ถูกต้อง")
+		return
+	}
+
+	// 3. เรียกใช้ Store เพื่ออัปเดตข้อมูลในฐานข้อมูล
+	err := h.Store.UpdateBookingStatus(r.Context(), id, req.Status)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+
+	// 4. ส่งผลลัพธ์กลับไปว่าอัปเดตสำเร็จ
+	writeJSON(w, http.StatusOK, map[string]string{"message": "อัปเดตสถานะสำเร็จ"})
+}

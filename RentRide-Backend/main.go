@@ -49,7 +49,6 @@ func main() {
 	mux.HandleFunc("GET /api/cars/{id}", h.GetCar)
 	mux.HandleFunc("POST /api/login", h.Login)
 	mux.HandleFunc("POST /api/register", h.Register)
-	
 	mux.HandleFunc("GET /api/profile", login(h.Me))
 
 	// การจอง
@@ -59,6 +58,7 @@ func main() {
 	mux.HandleFunc("POST /api/bookings/{id}/cancel", login(h.CancelBooking))
 	mux.HandleFunc("PUT /api/bookings/{id}/cancel", login(h.CancelBooking))
 	mux.HandleFunc("GET /api/admin/bookings", admin(h.AllBookings))
+	mux.HandleFunc("PUT /api/admin/bookings/{id}", admin(h.UpdateBookingStatus))
 
 	origins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
 
