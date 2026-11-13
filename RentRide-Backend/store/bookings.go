@@ -146,11 +146,11 @@ func (s *Store) ListAllBookings(ctx context.Context) ([]AdminBooking, error) {
 	return items, rows.Err()
 }
 
-// CancelBooking ยกเลิกได้เฉพาะการจองของตัวเองที่ยัง confirmed ไม่พบตอบ ErrNotFound
+// CancelBooking ยกเลิกได้เฉพาะการจองของตัวเองที่ยังไม่จบ (pending หรือ confirmed)
 func (s *Store) CancelBooking(ctx context.Context, id, userID int64) error {
 	tag, err := s.Pool.Exec(ctx,
 		`UPDATE bookings SET status = 'cancelled'
-		 WHERE id = $1 AND user_id = $2 AND status = 'confirmed'`, id, userID)
+		 WHERE id = $1 AND user_id = $2 AND status IN ('confirmed', 'pending')`, id, userID)
 	if err != nil {
 		return err
 	}
