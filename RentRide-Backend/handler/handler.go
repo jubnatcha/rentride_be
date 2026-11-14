@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"rentride/auth"
 	"rentride/store"
@@ -149,7 +150,7 @@ func (h *Handler) CreateCar(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "รูปแบบข้อมูลไม่ถูกต้อง")
 		return
 	}
-	if msg := validateCar(in); msg != "" {
+	if msg := validateCar(&in); msg != "" {
 		writeError(w, http.StatusBadRequest, "INVALID_CAR", msg)
 		return
 	}
@@ -172,7 +173,7 @@ func (h *Handler) UpdateCar(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "รูปแบบข้อมูลไม่ถูกต้อง")
 		return
 	}
-	if msg := validateCar(in); msg != "" {
+	if msg := validateCar(&in); msg != "" {
 		writeError(w, http.StatusBadRequest, "INVALID_CAR", msg)
 		return
 	}
