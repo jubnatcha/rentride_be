@@ -77,6 +77,7 @@ func (h *Handler) GetCar(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, c)
 }
 // UpdateBookingStatus ใช้สำหรับอัปเดตสถานะการจอง
+// UpdateBookingStatus ใช้สำหรับอัปเดตสถานะการจอง
 func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(r, "id")
 	if !ok {
@@ -92,27 +93,20 @@ func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ---- ส่วนที่เพิ่มเข้ามาเพื่อแก้ปัญหา Constraint ----
-	validStatus := ""
-	switch req.Status {
-	// ถ้า Frontend ส่งคำว่า approved มา ให้เปลี่ยนเป็นคำที่ DB ยอมรับ (เช่น active)
-	case "approved": 
-		validStatus = "active" // <--- ถ้าใน DB คุณให้ใช้คำว่า "confirmed" หรือคำอื่น ให้เปลี่ยนตรงนี้ครับ
-	case "cancelled":
-		validStatus = "cancelled"
-	case "pending":
-		validStatus = "pending"
-	case "active":
-		validStatus = "active"
-	default:
-		// ถ้าส่งมาเป็นคำแปลกๆ ให้ตัดจบการทำงานและแจ้ง Error กลับไปที่ Frontend
+	// สถานะที่อนุญาต (ต้องตรงกับที่ Frontend ส่ง และที่ DB รับ)
+	allowed := map[string]bool{
+		"pending":   true,
+		"confirmed": true,
+		"active":    true,
+		"completed": true,
+		"cancelled": true,
+	}
+	if !allowed[req.Status] {
 		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "สถานะการจองไม่ถูกต้อง: "+req.Status)
 		return
 	}
-	// ---------------------------------------------
 
-	// สังเกตว่าเราส่งตัวแปร validStatus ไปให้ Store แทน req.Status 
-		err := h.Store.UpdateBookingStatus(r.Context(), id, validStatus)
+	err := h.Store.UpdateBookingStatus(r.Context(), id, req.Status)
 	if errors.Is(err, store.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "BOOKING_NOT_FOUND", "ไม่พบการจองที่เปลี่ยนสถานะได้")
 		return
