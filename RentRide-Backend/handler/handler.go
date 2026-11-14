@@ -124,8 +124,8 @@ func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"message": "อัปเดตสถานะสำเร็จ"})
 }
 
-var validTypes = map[string]bool{
-	"Sedan": true, "SUV": true, "Scooter": true, "BigBike": true,
+var validTypes = map[string]string{
+	"sedan": "Sedan", "suv": "SUV", "scooter": "Scooter", "bigbike": "BigBike",
 }
 
 func validateCar(in store.CarInput) string {
