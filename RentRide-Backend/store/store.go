@@ -23,6 +23,7 @@ type CarInput struct {
 	Brand       string  `json:"brand"`
 	Model       string  `json:"model"`
 	Type        string  `json:"type"`
+	CarType      string  `json:"car_type"`
 	Seats       *int    `json:"seats"`
 	PricePerDay float64 `json:"price_per_day"`
 	ImageURL    *string `json:"image_url"`

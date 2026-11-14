@@ -137,7 +137,11 @@ func validateCar(in *store.CarInput) string {
 	if !ok {
 		return "ประเภทรถไม่ถูกต้อง"
 	}
+
 	in.Type = t // แปลงเป็น Sedan / SUV / Scooter / BigBike
+	if in.Type == "" {
+	in.Type = in.CarType
+}
 	if in.PricePerDay <= 0 {
 		return "ราคาต่อวันต้องมากกว่า 0"
 	}
