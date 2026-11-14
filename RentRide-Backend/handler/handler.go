@@ -128,13 +128,15 @@ var validTypes = map[string]string{
 	"sedan": "Sedan", "suv": "SUV", "scooter": "Scooter", "bigbike": "BigBike",
 }
 
-func validateCar(in store.CarInput) string {
+func validateCar(in *store.CarInput) string {
 	if in.Brand == "" || in.Model == "" {
 		return "กรุณากรอกยี่ห้อและรุ่น"
 	}
-	if !validTypes[in.Type] {
+	t, ok := validTypes[strings.ToLower(strings.TrimSpace(in.Type))]
+	if !ok {
 		return "ประเภทรถไม่ถูกต้อง"
 	}
+	in.Type = t // แปลงเป็น Sedan / SUV / Scooter / BigBike
 	if in.PricePerDay <= 0 {
 		return "ราคาต่อวันต้องมากกว่า 0"
 	}
