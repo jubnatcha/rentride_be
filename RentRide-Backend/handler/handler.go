@@ -111,7 +111,11 @@ func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 	// ---------------------------------------------
 
 	// สังเกตว่าเราส่งตัวแปร validStatus ไปให้ Store แทน req.Status 
-	err := h.Store.UpdateBookingStatus(r.Context(), id, validStatus)
+		err := h.Store.UpdateBookingStatus(r.Context(), id, validStatus)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "BOOKING_NOT_FOUND", "ไม่พบการจองที่เปลี่ยนสถานะได้")
+		return
+	}
 	if err != nil {
 		internal(w, err)
 		return
@@ -119,12 +123,17 @@ func (h *Handler) UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]string{"message": "อัปเดตสถานะสำเร็จ"})
 }
+
+var validTypes = map[string]bool{
+	"Sedan": true, "SUV": true, "Scooter": true, "BigBike": true,
+}
+
 func validateCar(in store.CarInput) string {
 	if in.Brand == "" || in.Model == "" {
 		return "กรุณากรอกยี่ห้อและรุ่น"
 	}
-	if in.Type == "" {
-		return "กรุณาเลือกประเภทรถ"
+	if !validTypes[in.Type] {
+		return "ประเภทรถไม่ถูกต้อง"
 	}
 	if in.PricePerDay <= 0 {
 		return "ราคาต่อวันต้องมากกว่า 0"

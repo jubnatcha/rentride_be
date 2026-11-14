@@ -19,14 +19,13 @@ type Car struct {
 	Status      string  `json:"status"`
 }
 
-// ListCars คืนรถที่พร้อมให้เช่า ค้นจากยี่ห้อหรือรุ่น (q) และกรองประเภท (carType: "car" / "motorcycle")
+// ListCars คืนรถทุกคัน ค้นจากยี่ห้อหรือรุ่น (q) และกรองประเภท (carType: "car" / "motorcycle")
 // ถ้า q หรือ carType ว่างคือไม่กรองตามนั้น
 func (s *Store) ListCars(ctx context.Context, q, carType string) ([]Car, error) {
 	rows, err := s.Pool.Query(ctx,
 		`SELECT id, brand, model, type, seats, price_per_day::float8, image_url, status
          FROM cars
-         WHERE status = 'available'
-           AND ($1 = '' OR brand ILIKE '%' || $1 || '%' OR model ILIKE '%' || $1 || '%')
+         WHERE ($1 = '' OR brand ILIKE '%' || $1 || '%' OR model ILIKE '%' || $1 || '%')
            AND ($2 = '' OR type = $2)
          ORDER BY id`, q, carType)
 	if err != nil {

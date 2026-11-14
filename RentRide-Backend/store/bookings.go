@@ -60,7 +60,7 @@ func (s *Store) CreateBooking(ctx context.Context, userID, carID int64, start, e
 	err = tx.QueryRow(ctx,
 		`SELECT EXISTS (
 		   SELECT 1 FROM bookings
-		   WHERE car_id = $1 AND status = 'confirmed'
+		   WHERE car_id = $1 AND status IN ('pending', 'confirmed', 'active')
 		     AND start_date <= $3 AND end_date >= $2)`,
 		carID, start, end).Scan(&taken)
 	if err != nil {
@@ -79,8 +79,8 @@ func (s *Store) CreateBooking(ctx context.Context, userID, carID int64, start, e
 		Days: days, TotalPrice: total, Status: "confirmed",
 	}
 	err = tx.QueryRow(ctx,
-		`INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price)
-		 VALUES ($1, $2, $3, $4, $5)
+		`INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price, status)
+		 VALUES ($1, $2, $3, $4, $5, 'pending')
 		 RETURNING id, created_at`,
 		userID, carID, start, end, total).Scan(&b.ID, &b.CreatedAt)
 	if err != nil {
@@ -161,9 +161,14 @@ func (s *Store) CancelBooking(ctx context.Context, id, userID int64) error {
 }
 // เพิ่มลงในแพ็กเกจ store
 func (s *Store) UpdateBookingStatus(ctx context.Context, id int64, status string) error {
-	// คำสั่ง SQL สำหรับอัปเดตสถานะ
-	query := `UPDATE bookings SET status = $1 WHERE id = $2`
-	
-	_, err := s.Pool.Exec(ctx, query, status, id)
-	return err
+	tag, err := s.Pool.Exec(ctx,
+		`UPDATE bookings SET status = $2
+		 WHERE id = $1 AND status IN ('pending', 'confirmed', 'active')`, id, status)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
